@@ -10,9 +10,9 @@ from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
 class BaseRequestHandler(BaseHTTPRequestHandler):
     
-    def sendFileToBrowser(self, fileName, contentType="text/html"):
+    def sendFileToBrowser(self, fileName, statusCode=200, contentType="text/html"):
         f = open(fileName)
-        self.send_response(200)
+        self.send_response(statusCode)
         self.send_header("Content-Type", contentType)
         self.end_headers()
         self.wfile.write(f.read())
