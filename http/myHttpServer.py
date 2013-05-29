@@ -11,6 +11,7 @@ from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
 
 class BaseRequestHandler(BaseHTTPRequestHandler):
+    secureToken = []
     
     def sendFileToBrowser(self, fileName, statusCode=200, contentType="text/html"):
         f = open(fileName)
@@ -23,7 +24,7 @@ class BaseRequestHandler(BaseHTTPRequestHandler):
     
     def do_showSignIn(self):
         fileName = curdir + sep + "files" + sep + "html" + sep + "loginform.html"
-        self.sendFileToBrowser(fileName)
+        self.sendFileToBrowser(fileName, statusCode=401)
     
     
     def checkUserNamePassport(self, userName, password):
@@ -38,15 +39,27 @@ class BaseRequestHandler(BaseHTTPRequestHandler):
                             break
         return valid
     
+    
     def do_GET(self):
         try:
-            ctype = ""
+            sToken = ""
             if self.headers.has_key('cookie'):
                 self.cookie = Cookie.SimpleCookie(self.headers.getheader("cookie"))
-                ctype = self.cookie.values()
+                try:
+                    sToken = self.cookie['sToken'].value
+                    if len(sToken) > 0:
+                        if sToken in self.secureToken:
+                            pass
+                        else:
+                            sToken = ""
+                        
+                except:
+                    sToken = ""
                 
-            if ctype == "":
+                
+            if sToken == "":
                 self.do_showSignIn()
+                
             else:
                 fileName = "index.html"
                 if len(self.path) > 1:
@@ -59,12 +72,17 @@ class BaseRequestHandler(BaseHTTPRequestHandler):
                 self.sendFileToBrowser(filePathName)
 
         except IOError:
-            #self.send_error(404, "not found! " + self.path)
             pass
             
     def do_POST(self):
-    
+        """
+        Erlaubte POST-Ziele:
+            /login.php
+        """
         try:
+            """
+            Daten anhand des Content-Type ermitteln und zur Verfuegung stellen
+            """
             postvars = {}
             ctype, pdict = cgi.parse_header(self.headers.getheader('content-type'))
             if ctype == 'multipart/form-data':
@@ -75,16 +93,24 @@ class BaseRequestHandler(BaseHTTPRequestHandler):
             else:
                 postvars = {}
             
+            """
+            Ziele 
+            """
             if self.path.endswith("/login.php"):
                 userName = str(postvars['user'][0]).lower()
                 password = str(postvars['password'][0])
                 
                 self.send_response(301)
+                redirectTo = "/loginform.html"
                 if self.checkUserNamePassport(userName, password) == True:
+                    secureTokenValue = hashlib.sha512(hashlib.md5(password).hexdigest() + userName).hexdigest()
+                    self.secureToken.append(secureTokenValue)
                     c = Cookie.SimpleCookie()
-                    c['sToken'] = "1234"
+                    c['sToken'] = secureTokenValue
                     self.send_header('Set-Cookie', c.output(header=''))
-                self.send_header("Location", "/index.html")
+                    redirectTo = "/index.html"
+                    
+                self.send_header("Location", redirectTo)
                 self.end_headers()
             
         except IOError:
