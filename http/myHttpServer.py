@@ -4,10 +4,8 @@ Created on 26.05.2013
 @author: admin
 '''
 import string,cgi,time,Cookie,csv
-<<<<<<< HEAD
 import hashlib
-=======
->>>>>>> branch 'master' of https://github.com/oliverschumann/http.git
+
 from os import curdir,sep
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
