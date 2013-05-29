@@ -4,7 +4,10 @@ Created on 26.05.2013
 @author: admin
 '''
 import string,cgi,time,Cookie,csv
+<<<<<<< HEAD
 import hashlib
+=======
+>>>>>>> branch 'master' of https://github.com/oliverschumann/http.git
 from os import curdir,sep
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
@@ -23,6 +26,16 @@ class BaseRequestHandler(BaseHTTPRequestHandler):
     def do_showSignIn(self):
         fileName = curdir + sep + "files" + sep + "html" + sep + "loginform.html"
         self.sendFileToBrowser(fileName)
+    
+    def checkUserNamePassport(self, userName, password):
+        valid = False
+        if username != "":
+            if password != "":
+                reader = csv.reader(open(curdir + sep + "files" + sep + "user.csv", "rb"))
+                for row in reader:
+                    pass
+                valid = True
+        return valid
     
     def checkUserNamePassport(self, userName, password):
         valid = False
@@ -59,6 +72,7 @@ class BaseRequestHandler(BaseHTTPRequestHandler):
             self.send_error(404, "not found!")
             
     def do_POST(self):
+<<<<<<< HEAD
     
         try:
             postvars = {}
@@ -86,6 +100,23 @@ class BaseRequestHandler(BaseHTTPRequestHandler):
         except IOError:
             self.send_error(404, "not found!")
             
+=======
+        try:
+            ctype, pdict = cgi.parse_header(self.headers.getheader('content-type'))
+            if ctype == 'multipart/form-data':
+                postvars = cgi.parse_multipart(self.rfile, pdict)
+            elif ctype == 'application/x-www-form-urlencoded':
+                length = int(self.headers.getheader('content-length'))
+                postvars = cgi.parse_qs(self.rfile.read(length), keep_blank_values=1)
+            else:
+                postvars = {}
+        except IOError:
+            self.send_error(404, "not found!")
+            
+        self.send_response(301)
+        self.send_header("Location", "/index.html")
+        self.end_headers()
+>>>>>>> branch 'master' of https://github.com/oliverschumann/http.git
         
 
 def main():
