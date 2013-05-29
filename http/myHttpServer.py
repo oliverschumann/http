@@ -44,6 +44,7 @@ class BaseRequestHandler(BaseHTTPRequestHandler):
             if self.headers.has_key('cookie'):
                 self.cookie = Cookie.SimpleCookie(self.headers.getheader("cookie"))
                 ctype = self.cookie.values()
+                
             if ctype == "":
                 self.do_showSignIn()
             else:
@@ -58,7 +59,8 @@ class BaseRequestHandler(BaseHTTPRequestHandler):
                 self.sendFileToBrowser(filePathName)
 
         except IOError:
-            self.send_error(404, "not found!")
+            #self.send_error(404, "not found! " + self.path)
+            pass
             
     def do_POST(self):
     
