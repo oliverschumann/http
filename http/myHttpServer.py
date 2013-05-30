@@ -3,15 +3,16 @@ Created on 26.05.2013
 
 @author: admin
 '''
-import string,cgi,time,Cookie,csv
-import hashlib
+import string,cgi,time,Cookie
+from HttpAuthenticator import HttpAuthenticator
 
 from os import curdir,sep
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
 
 
 class BaseRequestHandler(BaseHTTPRequestHandler):
-    secureToken = []
+    
+    authenticator = HttpAuthenticator(curdir + sep + "files" + sep + "user.csv")
     
     def sendFileToBrowser(self, fileName, statusCode=200, contentType="text/html"):
         f = open(fileName)
@@ -27,37 +28,17 @@ class BaseRequestHandler(BaseHTTPRequestHandler):
         self.sendFileToBrowser(fileName, statusCode=401)
     
     
-    def checkUserNamePassport(self, userName, password):
-        valid = False
-        if userName != "":
-            if password != "":
-                reader = csv.reader(open(curdir + sep + "files" + sep + "user.csv", "rb"))
-                for row in reader:
-                    if row[0] == userName:
-                        if row[1] == hashlib.sha512(password).hexdigest():
-                            valid = True
-                            break
-        return valid
-    
-    
     def do_GET(self):
         try:
             sToken = ""
             if self.headers.has_key('cookie'):
                 self.cookie = Cookie.SimpleCookie(self.headers.getheader("cookie"))
                 try:
-                    sToken = self.cookie['sToken'].value
-                    if len(sToken) > 0:
-                        if sToken in self.secureToken:
-                            pass
-                        else:
-                            sToken = ""
-                        
+                    sToken = self.cookie['sToken'].value                        
                 except:
                     sToken = ""
                 
-                
-            if sToken == "":
+            if self.authenticator.isValidToken(sToken) == False:
                 self.do_showSignIn()
                 
             else:
@@ -73,6 +54,7 @@ class BaseRequestHandler(BaseHTTPRequestHandler):
 
         except IOError:
             pass
+            
             
     def do_POST(self):
         """
@@ -97,16 +79,14 @@ class BaseRequestHandler(BaseHTTPRequestHandler):
             Ziele 
             """
             if self.path.endswith("/login.php"):
-                userName = str(postvars['user'][0]).lower()
+                userName = str(postvars['user'][0])
                 password = str(postvars['password'][0])
                 
                 self.send_response(301)
                 redirectTo = "/loginform.html"
-                if self.checkUserNamePassport(userName, password) == True:
-                    secureTokenValue = hashlib.sha512(hashlib.md5(password).hexdigest() + userName).hexdigest()
-                    self.secureToken.append(secureTokenValue)
+                if self.authenticator.isValidUserNamePassport(userName, password) == True:
                     c = Cookie.SimpleCookie()
-                    c['sToken'] = secureTokenValue
+                    c['sToken'] = self.authenticator.generateSecureToken(userName, password)
                     self.send_header('Set-Cookie', c.output(header=''))
                     redirectTo = "/index.html"
                     
