@@ -8,12 +8,13 @@ from HttpAuthenticator import HttpAuthenticator
 
 from os import curdir,sep
 from BaseHTTPServer import BaseHTTPRequestHandler, HTTPServer
-
+from HttpResponder import HeatingHttpResponder
 
 class BaseRequestHandler(BaseHTTPRequestHandler):
     
     authenticator = HttpAuthenticator(curdir + sep + "files" + sep + "user.csv")
     
+     
     def sendFileToBrowser(self, fileName, statusCode=200, contentType="text/html"):
         f = open(fileName)
         self.send_response(statusCode)
@@ -42,15 +43,19 @@ class BaseRequestHandler(BaseHTTPRequestHandler):
                 self.do_showSignIn()
                 
             else:
-                fileName = "index.html"
-                if len(self.path) > 1:
-                    position = self.path.rfind("/")
-                    if position != -1:
-                        position = position + 1
-                        fileName = self.path[position:]
-                    
-                filePathName = curdir + sep + "files" + sep + "html" + sep + fileName
-                self.sendFileToBrowser(filePathName)
+                if self.path.endswith("heatingstatus.html"):
+                    hsr = HeatingHttpResponder(self)
+                    hsr.showInfo()
+                else:
+                    fileName = "index.html"
+                    if len(self.path) > 1:
+                        position = self.path.rfind("/")
+                        if position != -1:
+                            position = position + 1
+                            fileName = self.path[position:]
+                        
+                    filePathName = curdir + sep + "files" + sep + "html" + sep + fileName
+                    self.sendFileToBrowser(filePathName)
 
         except IOError:
             pass
